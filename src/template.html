@@ -1,0 +1,855 @@
+<title>탐색트리 실습 채점기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* 레이아웃: 상단 바(제목·문제 탭) → 2열 작업대(왼쪽 코드, 오른쪽 결과), 900px 이하에서 1열로 쌓임 */
+:root {
+  --bg: #f4f6f3;
+  --surface: #ffffff;
+  --surface-2: #eef2ee;
+  --fg: #1b2420;
+  --fg-muted: #5b6a63;
+  --border: #d6ddd7;
+  --accent: #1e6b58;
+  --accent-ink: #ffffff;
+  --accent-soft: #dff0e9;
+  --ok: #257a4c;
+  --ok-soft: #e1f3e8;
+  --warn: #9a5f00;
+  --warn-soft: #fbefd6;
+  --bad: #b0392f;
+  --bad-soft: #fbe4e1;
+  --code-bg: #f6f8f5;
+  --shadow: 0 1px 2px rgba(20, 40, 30, .06), 0 8px 24px -16px rgba(20, 40, 30, .25);
+  --font-body: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'D2Coding', 'Consolas', 'SF Mono', Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111614; --surface: #192019; --surface-2: #202a24; --fg: #e4eae6;
+    --fg-muted: #9baba3; --border: #2c3831; --accent: #63c4a3; --accent-ink: #0d1a15; --accent-soft: #1d352d;
+    --ok: #74d49c; --ok-soft: #1a3426; --warn: #e6b451; --warn-soft: #3a2f14; --bad: #f28b82; --bad-soft: #3d1f1c;
+    --code-bg: #0e1311; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111614; --surface: #192019; --surface-2: #202a24; --fg: #e4eae6; --fg-muted: #9baba3; --border: #2c3831;
+  --accent: #63c4a3; --accent-ink: #0d1a15; --accent-soft: #1d352d; --ok: #74d49c; --ok-soft: #1a3426; --warn: #e6b451;
+  --warn-soft: #3a2f14; --bad: #f28b82; --bad-soft: #3d1f1c; --code-bg: #0e1311;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: var(--accent); }
+button, input, textarea, select { font: inherit; color: inherit; }
+code, pre, textarea, .mono { font-family: var(--font-mono); }
+h1, h2, h3 { margin: 0; line-height: 1.3; text-wrap: balance; }
+h1 { font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
+h2 { font-size: 1rem; font-weight: 600; }
+h3 { font-size: .92rem; font-weight: 600; }
+.eyebrow { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--fg-muted); font-weight: 600; }
+.muted { color: var(--fg-muted); }
+.small { font-size: .84rem; }
+
+/* 상단 바 */
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); }
+@media (min-width: 700px) { .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; } }
+.topbar-inner { max-width: 1400px; margin: 0 auto; padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; flex: none; }
+.brand-mark svg { width: 18px; height: 18px; }
+.brand .sub { font-size: .78rem; color: var(--fg-muted); }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.tab { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-weight: 500; font-size: .88rem; color: var(--fg-muted); }
+.tab:hover { border-color: var(--accent); color: var(--fg); }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.tab:focus-visible, button:focus-visible, textarea:focus-visible, summary:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 본문 */
+.wrap { max-width: 1400px; margin: 0 auto; padding-block: 18px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 16px; }
+.problem-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.problem-head h2 { font-size: 1.2rem; }
+.cmd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; font-size: .8rem; background: var(--surface); }
+.chip code { font-size: .8rem; color: var(--accent); font-weight: 600; }
+details.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+details.panel > summary { cursor: pointer; padding: 10px 14px; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 8px; }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--fg-muted); border-bottom: 2px solid var(--fg-muted); transform: rotate(-45deg); transition: transform .15s; margin-left: 2px; }
+details.panel[open] > summary::before { transform: rotate(45deg); }
+details.panel > .panel-body { padding: 0 16px 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+.desc { display: grid; gap: 12px; }
+.desc p { margin: 0; }
+.desc ul, .desc ol { margin: 0; padding-left: 20px; }
+.desc li { margin: 2px 0; }
+.desc table { border-collapse: collapse; font-size: .88rem; }
+.desc th, .desc td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; vertical-align: top; }
+.desc th { background: var(--surface-2); font-weight: 600; }
+.fn-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 14px; font-size: .88rem; }
+.fn-list code { color: var(--accent); font-weight: 600; }
+.io-example { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.io-example pre { margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: .82rem; overflow-x: auto; }
+
+.workspace { display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); gap: 16px; align-items: start; }
+@media (max-width: 960px) { .workspace { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 0; }
+.card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.card-head h2 { margin-right: auto; }
+.card-body { padding: 14px; display: grid; gap: 12px; }
+
+/* 코드 입력 */
+.editor { position: relative; }
+.editor textarea { display: block; width: 100%; min-height: 460px; resize: vertical; border: 1px solid var(--border); border-radius: 8px; background: var(--code-bg); color: var(--fg); padding: 12px 14px; font-size: 13px; line-height: 1.5; tab-size: 4; white-space: pre; overflow: auto; }
+.editor textarea::placeholder { color: var(--fg-muted); opacity: .8; }
+.editor.dragover textarea { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.editor-status { display: flex; justify-content: space-between; gap: 8px; font-size: .78rem; color: var(--fg-muted); padding: 6px 2px 0; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 500; font-size: .9rem; }
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.ghost { border-color: transparent; color: var(--fg-muted); }
+.btn.ghost:hover { color: var(--fg); border-color: var(--border); }
+.btn svg { width: 16px; height: 16px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.actions .spacer { flex: 1; }
+.kbd { font-family: var(--font-mono); font-size: .72rem; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--fg-muted); }
+
+/* 결과 */
+.empty-state { padding: 28px 18px; text-align: center; color: var(--fg-muted); display: grid; gap: 8px; justify-items: center; }
+.empty-state svg { width: 40px; height: 40px; opacity: .6; }
+.score { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; align-items: center; }
+.score-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 3rem; font-weight: 600; line-height: 1; letter-spacing: -.02em; }
+.score-num small { font-size: 1rem; color: var(--fg-muted); font-weight: 500; margin-left: 4px; }
+.verdict { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px; font-size: .82rem; font-weight: 600; }
+.verdict.ok { background: var(--ok-soft); color: var(--ok); }
+.verdict.part { background: var(--warn-soft); color: var(--warn); }
+.verdict.bad { background: var(--bad-soft); color: var(--bad); }
+.bar { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; grid-column: 1 / -1; }
+.bar > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .4s ease; }
+.score-meta { font-size: .85rem; color: var(--fg-muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.score-meta b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.hint { border-left: 4px solid var(--accent); background: var(--surface-2); border-radius: 8px; padding: 10px 12px 10px 14px; display: grid; gap: 4px; }
+.hint.bad { border-left-color: var(--bad); }
+.hint.warn { border-left-color: var(--warn); }
+.hint.ok { border-left-color: var(--ok); }
+.hint .hint-title { font-weight: 600; font-size: .92rem; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.hint .hint-title .where { font-size: .78rem; color: var(--fg-muted); font-weight: 500; font-family: var(--font-mono); }
+.hint p { margin: 0; font-size: .9rem; }
+.hint pre { margin: 4px 0 0; font-size: .8rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+.hints { display: grid; gap: 8px; }
+details.more > summary { cursor: pointer; font-size: .85rem; color: var(--fg-muted); padding: 4px 0; }
+
+.tests { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.tests th { text-align: left; font-weight: 600; color: var(--fg-muted); font-size: .78rem; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tests td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.tests tr.row { cursor: pointer; }
+.tests tr.row:hover td { background: var(--surface-2); }
+.tests tr.detail td { padding: 0 8px 12px; background: var(--surface-2); }
+.tests .w { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-muted); white-space: nowrap; }
+.tests .cat { color: var(--fg-muted); white-space: nowrap; font-size: .8rem; }
+.status { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; font-size: .8rem; white-space: nowrap; }
+.status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.status.pass { color: var(--ok); }
+.status.fail { color: var(--bad); }
+.status.err { color: var(--warn); }
+.status.pending { color: var(--fg-muted); }
+.status.pending::before { animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .status.pending::before { animation: none; } .bar > span { transition: none; } }
+.cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-top: 8px; }
+.cmp-in { margin-top: 10px; }
+.cmp-in pre { margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: .78rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.cmp-in h4, .cmp h4 { margin: 0 0 4px; font-size: .78rem; color: var(--fg-muted); font-weight: 600; }
+.cmp pre { margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: .78rem; line-height: 1.45; max-height: 260px; overflow: auto; }
+.cmp .ln { display: block; white-space: pre; }
+.cmp .ln.diff { background: var(--bad-soft); color: var(--bad); }
+.cmp .ln.diff-exp { background: var(--ok-soft); }
+.cmp .ln.missing { color: var(--fg-muted); font-style: italic; }
+.errbox { margin-top: 8px; font-size: .85rem; color: var(--bad); }
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.cat-item { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: .82rem; display: grid; gap: 2px; background: var(--surface); }
+.cat-item .cat-name { font-weight: 600; }
+.cat-item .cat-score { font-variant-numeric: tabular-nums; color: var(--fg-muted); font-size: .78rem; }
+.cat-item.pass { border-color: var(--ok); }
+.cat-item.fail { border-color: var(--bad); background: var(--bad-soft); }
+.fnchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fnchips .chip.yes { border-color: var(--ok); color: var(--ok); }
+.fnchips .chip.no { color: var(--fg-muted); border-style: dashed; }
+
+/* 직접 실행 */
+.run-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 600px) { .run-grid { grid-template-columns: 1fr; } }
+.run-grid textarea, .run-grid pre { width: 100%; min-height: 150px; margin: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--code-bg); padding: 10px 12px; font-size: .82rem; line-height: 1.45; }
+.run-grid pre { overflow: auto; white-space: pre-wrap; word-break: break-all; }
+.run-grid label { display: grid; gap: 4px; font-size: .8rem; color: var(--fg-muted); font-weight: 600; }
+.footer-note { font-size: .8rem; color: var(--fg-muted); display: grid; gap: 4px; }
+.footer-note ul { margin: 0; padding-left: 18px; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: .85rem; box-shadow: var(--shadow); z-index: 20; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2.2"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="12" r="2.2"/><circle cx="3.5" cy="19.5" r="2"/><circle cx="8.5" cy="19.5" r="2"/><path d="M10.6 6.1 7.4 10M13.4 6.1l3.2 3.9M5.2 14l-1 3.6M6.8 14l1 3.6"/></svg>
+      </div>
+      <div>
+        <h1>탐색트리 실습 채점기</h1>
+        <div class="sub">알고리즘 실습 · 7주차 (이진탐색트리 · AVL 트리)</div>
+      </div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="문제 선택" id="tabs"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <div class="problem-head">
+      <h2 id="prob-title"></h2>
+      <div class="cmd-chips" id="prob-cmds"></div>
+    </div>
+  </section>
+  <details class="panel" id="prob-panel">
+    <summary>문제 설명 · 입출력 형식 · 필요 함수</summary>
+    <div class="panel-body desc" id="prob-desc"></div>
+  </details>
+
+  <div class="workspace">
+    <section class="card" aria-labelledby="code-h">
+      <div class="card-head">
+        <h2 id="code-h">C 코드</h2>
+        <label class="btn ghost small" for="file-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5M5 21h14V8l-5-5H5z"/><path d="M12 11v6M9 14l3-3 3 3"/></svg>
+          .c 파일 열기
+        </label>
+        <input type="file" id="file-input" accept=".c,.h,.txt,text/plain" class="sr-only">
+        <button class="btn ghost small" id="clear-btn" type="button">지우기</button>
+      </div>
+      <div class="card-body">
+        <div class="editor" id="editor">
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="C 코드 입력" placeholder="// 여기에 C 코드를 붙여 넣거나, .c 파일을 끌어다 놓으세요.
+// 프로그램은 표준입력으로 명령(i, d, s, p, q)을 읽고 표준출력으로 결과를 출력해야 합니다.
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+typedef struct treeNode {
+    int key;
+    struct treeNode* parent;
+    struct treeNode* left;
+    struct treeNode* right;
+} node;
+
+node* root;
+
+void main() {
+    ...
+}"></textarea>
+          <div class="editor-status"><span id="code-stat">0줄 · 0자</span><span>Tab 키로 들여쓰기 · <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> 채점</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="grade-btn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            채점하기
+          </button>
+          <button class="btn" id="run-toggle" type="button" aria-expanded="false" aria-controls="run-panel">직접 실행</button>
+          <span class="spacer"></span>
+          <span class="small muted" id="engine-note">브라우저 안에서 실행됩니다 · 서버로 전송되지 않음</span>
+        </div>
+        <div id="run-panel" hidden>
+          <div class="run-grid">
+            <label>표준입력 (명령)
+              <textarea id="run-input" aria-label="표준입력" spellcheck="false"></textarea>
+            </label>
+            <label>표준출력
+              <pre id="run-output" aria-live="polite"></pre>
+            </label>
+          </div>
+          <div class="actions" style="margin-top:8px">
+            <button class="btn" id="run-btn" type="button">실행</button>
+            <span class="small muted" id="run-stat"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="result-h">
+      <div class="card-head">
+        <h2 id="result-h">채점 결과</h2>
+        <button class="btn ghost small" id="copy-btn" type="button" hidden>요약 복사</button>
+      </div>
+      <div class="card-body" id="results" aria-live="polite">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5 11 13.5 15 9.5"/><path d="M12 2.5 4 5.5v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10v-6z"/></svg>
+          <div><b>코드를 넣고 ‘채점하기’를 누르세요.</b></div>
+          <div class="small">문제지의 예시를 포함한 유형별 테스트를 실행해 점수와 함께, 틀린 유형에 대한 작성 방향 힌트를 보여줍니다.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <details class="panel" id="env-panel">
+    <summary>채점 방식 · 실행 환경 안내</summary>
+    <div class="panel-body footer-note">
+      <ul>
+        <li>코드는 브라우저 안의 C 인터프리터로 실행되며 외부로 전송되지 않습니다. 표준 라이브러리(stdio, stdlib, string, math, ctype, stdbool)의 주요 함수를 지원합니다. 파일 입출력, goto, 비트필드는 지원하지 않습니다. <code>scanf_s</code>, <code>#pragma</code>, <code>_CRT_SECURE_NO_WARNINGS</code> 같은 Visual Studio 관용구는 그대로 허용됩니다.</li>
+        <li>출력 비교는 줄 단위로 하며, 각 줄의 앞뒤 공백과 연속 공백 개수 차이는 무시합니다. 줄 수나 줄의 내용이 다르면 틀린 것으로 판정합니다.</li>
+        <li>점수는 테스트별 배점의 합(100점 만점)입니다. 정답 코드(교재 알고리즘)의 출력이 기준이며, 삭제 시 중위 후계자 사용·AVL 동점 처리 규칙 등 교재의 규칙을 따라야 같은 트리가 됩니다.</li>
+        <li>NULL 역참조, 해제한 메모리 재사용, 초기화되지 않은 값 읽기, 할당 범위를 벗어난 접근 같은 메모리 오류는 실제 컴파일러에서는 우연히 동작할 수 있지만 여기서는 오류로 잡아 줄 번호와 함께 알려줍니다.</li>
+        <li>실행 단계 300만 회 또는 3초를 넘으면 시간 초과(무한 루프)로 처리합니다.</li>
+      </ul>
+    </div>
+  </details>
+</main>
+
+<script id="engine-src" type="text/plain">
+/*__ENGINE__*/
+</script>
+<script>
+'use strict';
+const TESTS = /*__TESTS__*/;
+
+const PROBLEMS = [
+  {
+    id: 'p1', short: '문제 1 · 이진탐색트리', title: '[문제 1] 이진탐색트리 구현',
+    cmds: [['i <키>', '삽입'], ['d <키>', '삭제 후 키 출력 / 없으면 X'], ['s <키>', '탐색 후 키 출력 / 없으면 X'], ['p', '전위순회 인쇄'], ['q', '종료']],
+    fns: ['main', 'findElement', 'insertItem', 'treeSearch', 'removeElement', 'isExternal', 'isInternal', 'inOrderSucc', 'expandExternal', 'reduceExternal'],
+    desc: `
+<p>종료(<code>q</code>) 명령 때까지 삽입(<code>i</code>), 탐색(<code>s</code>), 삭제(<code>d</code>), 인쇄(<code>p</code>) 명령을 반복 입력받아 수행하는 이진탐색트리를 구현한다. 트리는 <b>외부노드(잎)</b>를 가진 형태로, main 함수는 명령을 받기 전에 외부노드 1개로만 이루어진 빈 트리를 초기화해야 한다.</p>
+<table><tr><th>명령</th><th>동작</th><th>출력</th></tr>
+<tr><td><code>i &lt;키&gt;</code></td><td>키를 저장한 노드를 생성해 삽입</td><td>없음</td></tr>
+<tr><td><code>d &lt;키&gt;</code></td><td>키가 있으면 노드 삭제</td><td>삭제된 키, 없으면 <code>X</code></td></tr>
+<tr><td><code>s &lt;키&gt;</code></td><td>키 탐색</td><td>키, 없으면 <code>X</code></td></tr>
+<tr><td><code>p</code></td><td>전위순회(루트 → 왼쪽 → 오른쪽) 인쇄</td><td>키들을 공백으로 구분해 한 줄</td></tr>
+<tr><td><code>q</code></td><td>프로그램 종료</td><td>없음</td></tr></table>
+<p><b>주의</b> ① 중복 키는 입력되지 않는다. ② 키만 있고 원소(element)는 없는 것으로 구현한다. ③ 빈 트리는 외부노드 1개로 초기화한다.</p>
+<p><b>힌트</b> ① 노드 구조체: <code>key, parent, left, right</code>. ② 삭제할 노드 w의 자식 중 하나(z)가 외부노드이면 <code>reduceExternal(z)</code>로 w와 z를 함께 제거하고 반대쪽 자식이 w를 계승한다. ③ 두 자식이 모두 내부노드이면 중위순회 후계자 y(오른쪽 자식으로 간 뒤 왼쪽 자식만 끝까지 따라감)의 키를 w에 두고 y 자리를 정리한다.</p>
+<div class="io-example"><div><h3 class="small">입력 예시 1</h3><pre>i 3
+i 2
+i 7
+s 4
+i 6
+p
+i 5
+s 6
+q</pre></div><div><h3 class="small">출력 예시 1</h3><pre>X
+ 3 2 7 6
+6</pre></div><div><h3 class="small">입력 예시 2</h3><pre>i 9
+i 2
+i 15
+i 1
+i 7
+i 11
+i 5
+i 8
+i 3
+i 4
+p
+d 2
+d 13
+p
+q</pre></div><div><h3 class="small">출력 예시 2</h3><pre> 9 2 1 7 5 3 4 8 15 11
+2
+X
+ 9 3 1 7 5 4 8 15 11</pre></div></div>
+<p class="small muted">전위순회 출력은 각 키 앞에 공백 하나를 붙여 출력한다(예시의 □ 표기). 채점에서는 줄 앞뒤 공백 차이를 무시한다.</p>
+<h3>주요 필요 함수</h3>
+<div class="fn-list">
+<div><code>main()</code> — 빈 트리 초기화 후 명령 반복 처리</div>
+<div><code>findElement(k)</code> — 키 k를 저장한 노드의 원소(=키) 반환</div>
+<div><code>insertItem(k)</code> — 키 k를 저장한 새 노드 삽입</div>
+<div><code>treeSearch(v, k)</code> — 키 k를 저장한 내부노드, 없으면 위치할 외부노드 반환</div>
+<div><code>removeElement(k)</code> — 키 k 노드 삭제 후 원소(=키) 반환</div>
+<div><code>isExternal(w)</code> / <code>isInternal(w)</code> — 외부/내부노드 여부</div>
+<div><code>inOrderSucc(w)</code> — 중위순회 후계자</div>
+<div><code>expandExternal(w)</code> / <code>reduceExternal(z)</code> — 외부노드 확장/축소 (교재)</div>
+</div>`
+  },
+  {
+    id: 'p2', short: '문제 2 · AVL 삽입', title: '[문제 2] AVL 트리 생성 (삽입·탐색)',
+    cmds: [['i <키>', '삽입 (불균형 시 개조)'], ['s <키>', '탐색 후 키 출력 / 없으면 X'], ['p', '전위순회 인쇄'], ['q', '종료']],
+    fns: ['main', 'insertItem', 'treeSearch', 'findElement', 'expandExternal', 'searchAndFixAfterInsertion', 'updateHeight', 'isBalanced', 'restructure'],
+    desc: `
+<p>입출력 구조는 문제 1과 같으나 삭제는 제외하고 삽입·탐색·출력을 구현한다. 키 삽입 후 불균형이 생기면 <b>개조(restructure)</b>를 수행한다. 개조(회전)는 좌우대칭을 포함해 단일회전 2가지, 이중회전 2가지 총 4가지 유형이 있다.</p>
+<p><b>힌트</b> ① 노드 구조체에 <code>height</code>를 추가한다 (외부노드 높이 0, 새 내부노드 높이 1). ② 문제 1의 함수를 그대로 또는 수정해 사용하고 필요한 함수를 추가한다. ③ 삽입 후 조상을 따라 올라가며 높이를 갱신하고, 처음 만나는 불균형 노드 z에서 y(z의 더 높은 자식), x(y의 더 높은 자식)로 restructure 한다.</p>
+<div class="io-example"><div><h3 class="small">입력 예시</h3><pre>i 44
+i 17
+i 78
+i 32
+i 50
+i 88
+i 48
+i 62
+s 88
+p
+q</pre></div><div><h3 class="small">출력 예시</h3><pre>88
+ 44 17 32 78 50 48 62 88</pre></div></div>
+<h3>필요 함수</h3>
+<div class="fn-list">
+<div><code>insertItem(k)</code> — 새 노드 w 삽입 후 <code>searchAndFixAfterInsertion(w)</code> 호출</div>
+<div><code>searchAndFixAfterInsertion(w)</code> — 균형 검사 후 불균형이면 개조</div>
+<div><code>updateHeight(w)</code> — 높이를 (필요하면) 갱신하고 갱신 여부 반환</div>
+<div><code>isBalanced(w)</code> — 높이균형 여부 반환</div>
+<div><code>restructure(x, y, z)</code> — 3-노드 개조 후 (갱신된) 부트리 루트 반환</div>
+</div>
+<p class="small muted">의사코드 가이드: Alg expandExternal(w) — l, r 두 외부노드 생성(높이 0), w.height = 1. Alg insertItem(k) — w ← treeSearch(root, k); 내부노드면 반환, 아니면 w에 k 저장 → expandExternal(w) → searchAndFixAfterInsertion(w). 나머지는 교재 연습문제 11-15 참고.</p>`
+  },
+  {
+    id: 'p3', short: '문제 3 · AVL 삭제', title: '[문제 3] AVL 트리 삭제',
+    cmds: [['i <키>', '삽입'], ['d <키>', '삭제 후 키 출력 / 없으면 X (불균형 시 개조)'], ['s <키>', '탐색'], ['p', '전위순회 인쇄'], ['q', '종료']],
+    fns: ['main', 'insertItem', 'removeElement', 'treeSearch', 'findElement', 'inOrderSucc', 'reduceExternal', 'searchAndFixAfterInsertion', 'searchAndFixAfterRemoval', 'updateHeight', 'isBalanced', 'restructure'],
+    desc: `
+<p>문제 2의 AVL 트리에 <b>삭제</b>를 추가한다. 삭제는 이진탐색트리와 같이 수행하되, 마지막 단계의 <code>reduceExternal</code>로 삭제된 노드의 부모(그리고 조상들)가 불균형이 될 수 있으므로 균형 검사와 수리를 해야 한다. 개조에는 문제 2의 <code>restructure</code>를 그대로 사용할 수 있다.</p>
+<p><b>힌트</b> ① 삭제에서는 한 번 개조한 뒤에도 그 위의 조상이 불균형일 수 있으므로 루트까지 계속 검사한다. ② 불균형 노드 z에서 y는 더 높은 자식, x는 y의 더 높은 자식으로 고르되, y의 두 자식 높이가 같으면 y와 같은 방향의 자식을 x로 택한다(단일회전). ③ 두 자식이 내부노드인 노드의 삭제는 중위 후계자 y의 키를 복사하고 y의 왼쪽 외부노드를 reduceExternal 한 뒤, 사라진 노드의 부모에서 수리를 시작한다.</p>
+<div class="io-example"><div><h3 class="small">입력 예시</h3><pre>i 9
+i 31
+i 66
+i 30
+i 1
+s 30
+i 24
+p
+s 47
+i 61
+d 30
+i 13
+q</pre></div><div><h3 class="small">출력 예시</h3><pre>30
+ 30 9 1 24 31 66
+X
+30</pre></div></div>
+<h3>필요 함수</h3>
+<div class="fn-list">
+<div><code>removeElement(k)</code> — 노드 삭제 후 reduceExternal 로 사라진 노드의 부모 w에 대해 <code>searchAndFixAfterRemoval(w)</code> 수행, 키 반환</div>
+<div><code>searchAndFixAfterRemoval(w)</code> — w에서 루트까지 올라가며 높이 갱신·균형 검사·개조</div>
+</div>
+<p class="small muted">의사코드 가이드 Alg removeElement(k): w ← treeSearch(root, k); 외부노드면 NoSuchKey 반환; z ← leftChild(w); z가 내부노드면 z ← rightChild(w); z가 외부노드면 zs ← reduceExternal(z) {case 1}, 아니면 y ← inOrderSucc(w), z ← leftChild(y), w에 key(y) 저장, zs ← reduceExternal(z) {case 2}; searchAndFixAfterRemoval(parent(zs)); return k.</p>`
+  },
+];
+
+const EKIND = {
+  'null-deref': ['NULL 포인터 역참조', '외부노드(잎)의 left/right 는 NULL 입니다. 노드의 멤버(->key, ->left 등)에 접근하기 전에 isExternal(w) 또는 NULL 검사를 먼저 해야 합니다. treeSearch 의 첫 조건, 전위순회의 종료 조건, inOrderSucc 의 반복 조건, reduceExternal 에서 부모 g 가 NULL(루트 삭제)인 경우를 확인하세요.'],
+  'uninit': ['초기화되지 않은 값 사용', '값을 넣은 적 없는 변수나 구조체 멤버를 읽었습니다. 새 노드를 만들 때 key·parent·left·right(·height)를 모두 설정했는지, main 에서 root 를 외부노드 하나로 만들며 parent/left/right 를 NULL 로 초기화했는지, 지역변수를 선언만 하고 쓰지 않았는지 확인하세요.'],
+  'use-after-free': ['해제한 메모리 재사용', 'free() 한 노드를 그 뒤에 다시 읽거나 썼습니다. reduceExternal 에서 z 와 w 를 free 한 뒤 w->parent 등을 쓰지 않는지, free 전에 필요한 값(형제 노드, 부모)을 먼저 변수에 저장했는지 확인하세요.'],
+  'double-free': ['같은 메모리를 두 번 해제', '같은 노드를 두 번 free 했습니다. reduceExternal 이 한 노드에 두 번 호출되거나 removeElement 에서 추가로 free 하는지 확인하세요.'],
+  'bad-free': ['free 대상 오류', 'malloc 으로 받은 주소가 아닌 값을 free 했습니다. 초기화되지 않은 포인터나 지역변수의 주소를 free 하지 않는지 확인하세요.'],
+  'heap-oob': ['할당 범위를 벗어난 접근', 'malloc 으로 할당한 크기보다 큰 범위를 사용했습니다. sizeof(node*) 가 아니라 sizeof(node) 만큼 할당했는지, 배열 인덱스가 범위를 넘지 않는지 확인하세요.'],
+  'array-oob': ['배열 범위 초과', '배열의 크기를 넘는 인덱스에 접근했습니다. 인덱스 범위(0 ~ 크기-1)와 반복문의 종료 조건을 확인하세요.'],
+  'invalid-addr': ['잘못된 메모리 주소 접근', '유효하지 않은 주소를 역참조했습니다. 초기화되지 않은 포인터(쓰레기값)를 사용했거나 포인터 연산이 잘못되었을 가능성이 큽니다.'],
+  'dead-stack': ['소멸된 지역변수 접근', '함수가 끝나 사라진 지역변수의 주소를 사용했습니다. 노드는 malloc 으로 만들어야 하며, 지역변수(구조체)의 주소를 트리에 연결하면 함수가 끝난 뒤 사라집니다.'],
+  'stack-overflow': ['재귀 깊이 초과(스택 오버플로)', '재귀 호출이 끝나지 않습니다. treeSearch·전위순회·inOrderSucc 등에서 외부노드에 도달하면 멈추는 종료 조건을 확인하세요. 트리의 parent 포인터가 자기 자신을 가리키는 등 포인터 갱신이 잘못되었을 수도 있습니다.'],
+  'timeout': ['시간 초과(무한 루프 가능성)', '프로그램이 끝나지 않습니다. 명령 반복문이 q 에서 종료되는지, while 문의 종료 조건과 포인터 이동(w = w->left 등)이 맞는지 확인하세요.'],
+  'output-limit': ['출력 과다(무한 반복 출력)', '출력이 비정상적으로 많습니다. 반복문이 끝나지 않고 계속 출력하는지 확인하세요.'],
+  'div-zero': ['0으로 나누기', '나누기 또는 나머지 연산의 오른쪽 값이 0 이었습니다.'],
+  'type': ['타입 오류', '값의 종류(정수/포인터/구조체)가 맞지 않는 연산입니다. 노드 포인터와 키 값을 혼동했는지, 구조체(.)와 구조체 포인터(->)를 혼동했는지 확인하세요.'],
+  'arg-count': ['함수 인자 개수 불일치', '함수 정의의 매개변수 개수와 호출할 때 넘긴 인자 개수가 다릅니다.'],
+  'no-return': ['반환값 누락', '값을 반환해야 하는 함수가 return 없이 끝났는데 그 결과를 사용했습니다. 재귀 호출 결과를 return 하지 않았거나(예: treeSearch), else 분기에 return 이 빠졌는지 확인하세요.'],
+  'undeclared': ['선언되지 않은 이름', '정의하지 않은 함수나 변수를 사용했습니다. 이름의 철자를 확인하세요.'],
+  'no-main': ['main 함수 없음', '프로그램 시작점인 main 함수가 필요합니다.'],
+  'out-of-memory': ['메모리 부족', '메모리를 지나치게 많이 할당했습니다. 반복문 안에서 malloc 이 무한히 호출되는지 확인하세요.'],
+  'abort': ['abort 호출', 'abort() 가 호출되어 프로그램이 중단되었습니다.'],
+  'other': ['실행 오류', '실행 중 오류가 발생했습니다.'],
+};
+
+/* ---------- 유틸 ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function normLines(s) {
+  const lines = String(s).replace(/\r/g, '').split('\n').map(l => l.trim().replace(/\s+/g, ' '));
+  while (lines.length && lines[lines.length - 1] === '') lines.pop();
+  return lines;
+}
+function toast(msg) {
+  let t = $('.toast'); if (t) t.remove();
+  t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1800);
+}
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 무시 */ } }
+
+/* ---------- 실행기(워커) ---------- */
+class Runner {
+  constructor() {
+    const engine = $('#engine-src').textContent;
+    const glue = `\nself.onmessage = function (ev) { var d = ev.data; var r; try { r = compileAndRun(d.code, d.input, d.opts); } catch (e) { r = { status: 'internal_error', error: { kind: 'internal', message: String(e && e.stack || e), line: 0 }, stdout: '', stderr: '', warnings: [], steps: 0 }; } self.postMessage({ id: d.id, result: r }); };`;
+    this.url = URL.createObjectURL(new Blob([engine, glue], { type: 'text/javascript' }));
+    this.worker = null; this.pending = new Map(); this.seq = 0;
+  }
+  ensure() {
+    if (this.worker) return;
+    this.worker = new Worker(this.url);
+    this.worker.onmessage = (ev) => { const p = this.pending.get(ev.data.id); if (p) { clearTimeout(p.timer); this.pending.delete(ev.data.id); p.resolve(ev.data.result); } };
+    this.worker.onerror = (ev) => { const err = { status: 'internal_error', error: { kind: 'internal', message: '실행기 오류: ' + (ev.message || ''), line: 0 }, stdout: '', stderr: '', warnings: [], steps: 0 }; for (const [, p] of this.pending) { clearTimeout(p.timer); p.resolve(err); } this.pending.clear(); this.reset(); };
+  }
+  reset() { if (this.worker) { this.worker.terminate(); this.worker = null; } }
+  run(code, input, opts, hardTimeoutMs = 12000) {
+    this.ensure();
+    const id = ++this.seq;
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(id); this.reset();
+        resolve({ status: 'runtime_error', error: { kind: 'runtime', ekind: 'timeout', message: `실행 시간이 ${hardTimeoutMs / 1000}초를 넘어 중단했습니다 (무한 루프 가능성).`, line: 0 }, stdout: '', stderr: '', warnings: [], steps: 0, hardTimeout: true });
+      }, hardTimeoutMs);
+      this.pending.set(id, { resolve, timer });
+      this.worker.postMessage({ id, code, input, opts });
+    });
+  }
+}
+const runner = new Runner();
+const RUN_OPTS = { maxSteps: 3000000, timeLimitMs: 3000, maxOutput: 262144 };
+
+/* ---------- 상태 ---------- */
+let currentPid = lsGet('tg.pid') || 'p1';
+if (!PROBLEMS.some(p => p.id === currentPid)) currentPid = 'p1';
+let grading = false;
+let lastSummary = '';
+
+/* ---------- 문제 표시 ---------- */
+function renderTabs() {
+  const tabs = $('#tabs'); tabs.innerHTML = '';
+  for (const p of PROBLEMS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab'; b.role = 'tab'; b.id = 'tab-' + p.id;
+    b.setAttribute('aria-selected', p.id === currentPid ? 'true' : 'false');
+    b.textContent = p.short;
+    b.addEventListener('click', () => selectProblem(p.id));
+    tabs.appendChild(b);
+  }
+}
+function selectProblem(pid) {
+  if (grading) { toast('채점이 끝난 뒤 문제를 바꿀 수 있습니다.'); return; }
+  currentPid = pid; lsSet('tg.pid', pid);
+  renderTabs();
+  const p = PROBLEMS.find(x => x.id === pid);
+  $('#prob-title').textContent = p.title;
+  $('#prob-cmds').innerHTML = p.cmds.map(([c, d]) => `<span class="chip"><code>${esc(c)}</code> ${esc(d)}</span>`).join('');
+  $('#prob-desc').innerHTML = p.desc;
+  $('#run-input').value = TESTS[pid][0].input;
+  $('#run-output').textContent = '';
+  $('#run-stat').textContent = '';
+  const n = TESTS[pid].length, w = TESTS[pid].reduce((s, t) => s + t.weight, 0);
+  $('#results').innerHTML = `<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5 11 13.5 15 9.5"/><path d="M12 2.5 4 5.5v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10v-6z"/></svg>
+    <div><b>${esc(p.short)}</b> — 테스트 ${n}개 (${w}점 만점)</div>
+    <div class="small">코드를 넣고 ‘채점하기’를 누르면 유형별 테스트 결과와 작성 방향 힌트를 보여줍니다.</div></div>`;
+  $('#copy-btn').hidden = true;
+  const code = $('#code');
+  const saved = lsGet('tg.code.' + pid);
+  code.value = saved != null ? saved : '';
+  updateStat();
+}
+
+/* ---------- 에디터 ---------- */
+const codeEl = $('#code');
+function updateStat() {
+  const v = codeEl.value;
+  const lines = v ? v.split('\n').length : 0;
+  $('#code-stat').textContent = `${lines}줄 · ${v.length.toLocaleString()}자`;
+}
+codeEl.addEventListener('input', () => { updateStat(); lsSet('tg.code.' + currentPid, codeEl.value); });
+codeEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = codeEl.selectionStart, en = codeEl.selectionEnd;
+    codeEl.setRangeText('\t', s, en, 'end');
+    codeEl.dispatchEvent(new Event('input'));
+  }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); grade(); }
+});
+function loadFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let text = String(reader.result);
+    // EUC-KR 등으로 저장된 파일: 깨진 문자가 많으면 안내
+    if ((text.match(new RegExp('\\uFFFD', 'g')) || []).length > 5) toast('한글 주석이 깨져 보일 수 있습니다 (UTF-8 이 아닌 파일). 코드 채점에는 영향이 없습니다.');
+    codeEl.value = text; codeEl.dispatchEvent(new Event('input'));
+    toast(`${file.name} 을(를) 불러왔습니다.`);
+  };
+  reader.readAsText(file, 'utf-8');
+}
+$('#file-input').addEventListener('change', (e) => { loadFile(e.target.files[0]); e.target.value = ''; });
+const editor = $('#editor');
+editor.addEventListener('dragover', (e) => { e.preventDefault(); editor.classList.add('dragover'); });
+editor.addEventListener('dragleave', () => editor.classList.remove('dragover'));
+editor.addEventListener('drop', (e) => { e.preventDefault(); editor.classList.remove('dragover'); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadFile(f); });
+$('#clear-btn').addEventListener('click', () => { if (!codeEl.value || codeEl.value.length < 20 || $('#clear-btn').dataset.armed) { codeEl.value = ''; codeEl.dispatchEvent(new Event('input')); delete $('#clear-btn').dataset.armed; $('#clear-btn').textContent = '지우기'; } else { $('#clear-btn').dataset.armed = '1'; $('#clear-btn').textContent = '정말 지우기?'; setTimeout(() => { delete $('#clear-btn').dataset.armed; $('#clear-btn').textContent = '지우기'; }, 2500); } });
+
+/* ---------- 직접 실행 ---------- */
+$('#run-toggle').addEventListener('click', () => {
+  const panel = $('#run-panel'); const open = panel.hidden;
+  panel.hidden = !open; $('#run-toggle').setAttribute('aria-expanded', String(open));
+});
+$('#run-btn').addEventListener('click', async () => {
+  const code = codeEl.value;
+  if (!code.trim()) { toast('먼저 코드를 입력하세요.'); return; }
+  $('#run-btn').disabled = true; $('#run-stat').textContent = '실행 중…';
+  const r = await runner.run(code, $('#run-input').value, RUN_OPTS);
+  $('#run-btn').disabled = false;
+  let out = r.stdout;
+  if (r.status !== 'ok') out += (out && !out.endsWith('\n') ? '\n' : '') + `\n[${statusLabel(r.status)}${r.error && r.error.line ? ' · ' + r.error.line + '번째 줄' : ''}] ${r.error ? r.error.message : ''}`;
+  if (r.stderr) out += `\n[stderr] ${r.stderr}`;
+  $('#run-output').textContent = out;
+  $('#run-stat').textContent = r.status === 'ok' ? `정상 종료 (exit ${r.exitCode}) · ${r.steps.toLocaleString()} 단계` : '';
+});
+function statusLabel(s) { return { ok: '정상', compile_error: '컴파일 오류', runtime_error: '실행 오류', internal_error: '채점기 내부 오류', timeout: '시간 초과' }[s] || s; }
+
+/* ---------- 채점 ---------- */
+function evaluate(test, r) {
+  const expLines = normLines(test.expected), gotLines = normLines(r.stdout || '');
+  let firstDiff = -1;
+  for (let i = 0; i < Math.max(expLines.length, gotLines.length); i++) { if (expLines[i] !== gotLines[i]) { firstDiff = i; break; } }
+  const normalized = firstDiff < 0;
+  const exact = (r.stdout || '').replace(/\r/g, '').replace(/\n+$/, '') === test.expected.replace(/\n+$/, '');
+  let status;
+  if (r.status === 'ok') status = normalized ? 'pass' : 'fail';
+  else status = 'err';
+  return { test, r, status, normalized, exact, firstDiff, expLines, gotLines };
+}
+
+async function grade() {
+  if (grading) return;
+  const code = codeEl.value;
+  if (!code.trim()) { toast('채점할 코드를 먼저 입력하세요.'); return; }
+  grading = true;
+  $('#grade-btn').disabled = true;
+  const pid = currentPid, tests = TESTS[pid], prob = PROBLEMS.find(p => p.id === pid);
+  const results = $('#results');
+  results.innerHTML = `<div class="score"><div class="score-num" id="score-live">…</div><div><div class="verdict part" id="verdict-live">채점 중</div><div class="score-meta" style="margin-top:6px"><span id="progress-live">0 / ${tests.length} 테스트</span></div></div><div class="bar"><span id="bar-live" style="width:0%"></span></div></div>
+    <table class="tests" id="tests-live"><thead><tr><th>유형</th><th>테스트</th><th>결과</th><th class="w">배점</th></tr></thead><tbody>${tests.map(t => `<tr class="row" data-id="${t.id}"><td class="cat">${esc(t.cat)}</td><td>${esc(t.title)}</td><td><span class="status pending">대기</span></td><td class="w">${t.weight}</td></tr>`).join('')}</tbody></table>`;
+  const evals = [];
+  let compileFailed = false;
+  for (let i = 0; i < tests.length; i++) {
+    const t = tests[i];
+    const row = results.querySelector(`tr[data-id="${t.id}"]`);
+    row.querySelector('.status').textContent = '실행 중';
+    let r;
+    if (compileFailed) r = Object.assign({}, evals[0].r, { stdout: '' });
+    else r = await runner.run(code, t.input, RUN_OPTS);
+    if (r.status === 'compile_error') compileFailed = true;
+    const ev = evaluate(t, r);
+    evals.push(ev);
+    const st = row.querySelector('.status');
+    st.className = 'status ' + ev.status;
+    st.textContent = ev.status === 'pass' ? '통과' : ev.status === 'fail' ? '출력 불일치' : statusLabel(r.status);
+    const passedW = evals.filter(e => e.status === 'pass').reduce((s, e) => s + e.test.weight, 0);
+    const totalW = tests.reduce((s, x) => s + x.weight, 0);
+    $('#score-live').innerHTML = `${Math.round(passedW)}<small>/ ${totalW}</small>`;
+    $('#progress-live').textContent = `${i + 1} / ${tests.length} 테스트`;
+    $('#bar-live').style.width = (passedW / totalW * 100) + '%';
+  }
+  renderResults(prob, tests, evals, code);
+  grading = false;
+  $('#grade-btn').disabled = false;
+}
+$('#grade-btn').addEventListener('click', grade);
+
+function renderResults(prob, tests, evals, code) {
+  const totalW = tests.reduce((s, x) => s + x.weight, 0);
+  const passedW = evals.filter(e => e.status === 'pass').reduce((s, e) => s + e.test.weight, 0);
+  const score = Math.round(passedW / totalW * 100);
+  const passed = evals.filter(e => e.status === 'pass').length;
+  const verdict = score === 100 ? ['ok', '정답'] : score >= 60 ? ['part', '부분 정답'] : ['bad', '오답'];
+  const hints = buildHints(prob, evals, code);
+  const cats = [];
+  for (const e of evals) { let c = cats.find(x => x.name === e.test.cat); if (!c) { c = { name: e.test.cat, w: 0, got: 0, n: 0, pass: 0 }; cats.push(c); } c.w += e.test.weight; c.n++; if (e.status === 'pass') { c.got += e.test.weight; c.pass++; } }
+  const fnCheck = checkFunctions(prob, code);
+
+  let html = `<div class="score"><div class="score-num">${score}<small>/ 100</small></div><div><div class="verdict ${verdict[0]}">${verdict[1]}</div><div class="score-meta" style="margin-top:6px"><span>통과 <b>${passed}</b> / ${tests.length} 테스트</span><span>획득 <b>${Math.round(passedW)}</b> / ${totalW} 점</span></div></div><div class="bar"><span style="width:${score}%"></span></div></div>`;
+  html += `<div class="cat-grid">${cats.map(c => `<div class="cat-item ${c.pass === c.n ? 'pass' : 'fail'}"><span class="cat-name">${esc(c.name)}</span><span class="cat-score">${c.pass}/${c.n} 통과 · ${Math.round(c.got)}/${c.w}점</span></div>`).join('')}</div>`;
+  html += `<div><div class="eyebrow" style="margin-bottom:6px">${score === 100 ? '점검 결과' : '작성 방향 힌트'}</div><div class="hints">${hints.main.map(h => hintHtml(h)).join('')}</div>${hints.more.length ? `<details class="more"><summary>힌트 ${hints.more.length}개 더 보기</summary><div class="hints" style="margin-top:8px">${hints.more.map(h => hintHtml(h)).join('')}</div></details>` : ''}</div>`;
+  html += `<div><div class="eyebrow" style="margin-bottom:6px">테스트 상세 <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">(행을 누르면 입력·기대 출력·실제 출력을 비교합니다)</span></div>
+  <div style="overflow-x:auto"><table class="tests"><thead><tr><th>유형</th><th>테스트</th><th>결과</th><th class="w">배점</th></tr></thead><tbody>${evals.map((e, i) => testRowHtml(e, i)).join('')}</tbody></table></div></div>`;
+  html += `<div><div class="eyebrow" style="margin-bottom:6px">필요 함수 점검 <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">(참고용 · 이름이 달라도 감점 없음)</span></div><div class="fnchips">${fnCheck.map(f => `<span class="chip ${f.found ? 'yes' : 'no'}">${f.found ? '✓' : '–'} <code>${esc(f.name)}</code></span>`).join('')}</div></div>`;
+  $('#results').innerHTML = html;
+  $('#results').querySelectorAll('tr.row').forEach(row => row.addEventListener('click', () => {
+    const d = row.nextElementSibling; if (d && d.classList.contains('detail')) { d.hidden = !d.hidden; row.setAttribute('aria-expanded', String(!d.hidden)); }
+  }));
+  // 처음 실패한 테스트는 펼쳐 둔다
+  const firstFail = evals.findIndex(e => e.status !== 'pass');
+  if (firstFail >= 0) { const row = $('#results').querySelector(`tr.row[data-i="${firstFail}"]`); if (row) { row.nextElementSibling.hidden = false; row.setAttribute('aria-expanded', 'true'); } }
+
+  lastSummary = `[${prob.short}] 점수 ${score}/100 · 통과 ${passed}/${tests.length}\n` + cats.map(c => `- ${c.name}: ${c.pass}/${c.n} (${Math.round(c.got)}/${c.w}점)`).join('\n') + (hints.main.length ? '\n힌트:\n' + hints.main.map(h => `- ${h.title}: ${h.body}`).join('\n') : '');
+  $('#copy-btn').hidden = false;
+}
+function hintHtml(h) {
+  return `<div class="hint ${h.level || ''}"><div class="hint-title"><span>${esc(h.title)}</span>${h.where ? `<span class="where">${esc(h.where)}</span>` : ''}</div><p>${esc(h.body)}</p>${h.code ? `<pre>${esc(h.code)}</pre>` : ''}</div>`;
+}
+function testRowHtml(e, i) {
+  const t = e.test, r = e.r;
+  const label = e.status === 'pass' ? (e.exact ? '통과' : '통과 (공백 차이)') : e.status === 'fail' ? '출력 불일치' : statusLabel(r.status) + (r.error && r.error.line ? ` · ${r.error.line}번째 줄` : '');
+  const inputLines = t.input.trim().split('\n');
+  const inputShort = inputLines.join(' ');
+  const cmpLines = (lines, other, isExp) => {
+    const n = Math.max(lines.length, other.length);
+    let out = '';
+    for (let k = 0; k < n; k++) {
+      const l = lines[k];
+      const same = lines[k] === other[k];
+      if (l === undefined) out += `<span class="ln missing">(${k + 1}행 없음)</span>`;
+      else out += `<span class="ln ${same ? '' : (isExp ? 'diff-exp' : 'diff')}">${esc(l) || ' '}</span>`;
+    }
+    return out;
+  };
+  let detail = `<div class="cmp-in"><h4>입력 (${inputLines.length - 1}개 명령, 한 줄에 하나씩)</h4><pre>${esc(inputShort)}</pre></div><div class="cmp">`;
+  if (e.status !== 'pass' || !e.exact) {
+    detail += `<div><h4>기대 출력</h4><pre>${cmpLines(e.expLines, e.gotLines, true)}</pre></div><div><h4>실제 출력</h4><pre>${e.gotLines.length ? cmpLines(e.gotLines, e.expLines, false) : '<span class="ln missing">(출력 없음)</span>'}</pre></div>`;
+  } else detail += `<div><h4>출력</h4><pre>${esc(e.expLines.join('\n'))}</pre></div>`;
+  detail += `</div>`;
+  if (r.error) detail += `<div class="errbox"><b>${esc(statusLabel(r.status))}${r.error.line ? ` (${r.error.line}번째 줄)` : ''}:</b> ${esc(r.error.message)}</div>`;
+  if (r.stderr) detail += `<div class="errbox muted">stderr: ${esc(r.stderr.slice(0, 500))}</div>`;
+  if (e.status === 'fail' && e.firstDiff >= 0) detail += `<div class="small muted" style="margin-top:6px">${e.firstDiff + 1}번째 출력 줄부터 다릅니다${e.gotLines.length < e.expLines.length ? ' (출력이 기대보다 짧습니다)' : e.gotLines.length > e.expLines.length ? ' (출력이 기대보다 깁니다)' : ''}.</div>`;
+  return `<tr class="row" data-i="${i}" aria-expanded="false" tabindex="0"><td class="cat">${esc(t.cat)}</td><td>${esc(t.title)}</td><td><span class="status ${e.status}">${esc(label)}</span></td><td class="w">${t.weight}</td></tr><tr class="detail" hidden><td colspan="4">${detail}</td></tr>`;
+}
+
+function sourceLine(code, line) {
+  if (!line) return '';
+  const l = code.replace(/\r/g, '').split('\n')[line - 1];
+  return l == null ? '' : `${line}: ${l.trim()}`;
+}
+
+function buildHints(prob, evals, code) {
+  const main = [], more = [];
+  const failed = evals.filter(e => e.status !== 'pass');
+  if (!failed.length) {
+    main.push({ level: 'ok', title: '모든 테스트를 통과했습니다.', body: '문제지의 예시와 유형별 테스트(삽입·탐색·삭제·회전·높이 갱신 등)에서 정답 코드와 같은 결과를 냈습니다.' });
+    const nonExact = evals.filter(e => !e.exact);
+    if (nonExact.length) more.push({ level: 'warn', title: '출력 형식 참고', body: `${nonExact.length}개 테스트는 공백·줄바꿈 차이가 있었지만 통과로 처리했습니다. 문제지 형식은 전위순회의 각 키 앞에 공백 하나(" %d")를 붙이고 줄 끝에 줄바꿈을 넣는 것입니다.` });
+    const warns = [...new Set(evals.flatMap(e => e.r.warnings || []))];
+    if (warns.length) more.push({ level: 'warn', title: '전처리/실행 경고', body: warns.slice(0, 3).join(' ') });
+    return { main, more };
+  }
+  // 1. 컴파일 오류
+  const ce = failed.find(e => e.r.status === 'compile_error');
+  if (ce) {
+    const er = ce.r.error;
+    main.push({ level: 'bad', title: '컴파일 오류 — 먼저 고쳐야 합니다', where: er.line ? `${er.line}번째 줄` : '', body: er.message, code: sourceLine(code, er.line) });
+    more.push({ level: '', title: '컴파일 오류 점검 순서', body: '① 표시된 줄과 바로 앞 줄의 세미콜론(;)·괄호·중괄호 짝을 확인합니다. ② 이름의 철자(대소문자)를 확인합니다. ③ 구조체를 typedef 로 선언했다면 그 이름을 쓰고, 아니면 struct 키워드를 붙입니다. ④ 함수는 사용하기 전에 정의하거나 원형(프로토타입)을 선언합니다.' });
+    return { main, more };
+  }
+  if (failed.some(e => e.r.status === 'internal_error')) {
+    main.push({ level: 'bad', title: '채점기가 처리하지 못한 코드', body: '이 코드의 일부 문법이나 기능을 채점기의 C 인터프리터가 지원하지 않습니다. 아래 오류 메시지를 참고해 해당 부분을 표준 C 로 바꾸거나, 지원 범위(실행 환경 안내)를 확인하세요.', code: (failed.find(e => e.r.status === 'internal_error').r.error.message || '').slice(0, 300) });
+  }
+  // 2. 실행 오류 묶음
+  const errs = failed.filter(e => e.r.status === 'runtime_error' && e.r.error);
+  if (errs.length) {
+    const groups = new Map();
+    for (const e of errs) { const k = (e.r.error.ekind || 'other') + '|' + e.r.error.line; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(e); }
+    const sorted = [...groups.values()].sort((a, b) => b.length - a.length);
+    sorted.slice(0, 2).forEach((g, idx) => {
+      const er = g[0].r.error; const ek = er.ekind || 'other';
+      const [title, expl] = EKIND[ek] || EKIND.other;
+      let body = er.message + ' ' + expl;
+      if (ek === 'uninit' && /->key/.test(er.message)) body += ' 외부노드에는 키가 저장되어 있지 않으므로, 외부노드의 key 를 읽었다면 isExternal 검사가 빠진 것입니다.';
+      if ((ek === 'timeout' || ek === 'output-limit') && g.some(e => e.r.eofReads > 0)) body += ` 입력이 모두 끝난 뒤에도 입력을 더 읽으려 했습니다. q 명령에서 반복문을 끝내지(return/break) 않았거나, 입력이 끝났을 때(scanf 가 EOF 반환) 반복을 멈추지 않는 것이 원인입니다.`;
+      if (ek === 'uninit' && g.some(e => e.r.eofReads > 0) && /'c'|'cmd'|'ch'|'op'|'command'/.test(er.message)) body += ' 입력이 모두 소진된 뒤 scanf 가 실패해 명령 변수에 값이 들어가지 않은 상태로 switch 문을 실행했습니다. q 명령에서 프로그램을 종료하는지 확인하세요.';
+      const where = `${er.line ? er.line + '번째 줄 · ' : ''}${g.length}개 테스트 (${esc(g[0].test.title)}${g.length > 1 ? ' 등' : ''})`;
+      (idx === 0 ? main : more).push({ level: 'bad', title: '실행 오류: ' + title, where, body, code: sourceLine(code, er.line) });
+    });
+  }
+  // 2.5 출력 패턴 분석: 같은 키들인데 순서만 다른 경우(순회 순서), 출력 줄 누락
+  const firstFail = failed.find(e => e.status === 'fail' && e.firstDiff >= 0);
+  if (firstFail) {
+    const exp = firstFail.expLines[firstFail.firstDiff] || '', got = firstFail.gotLines[firstFail.firstDiff] || '';
+    const et = exp.split(' ').filter(Boolean), gt = got.split(' ').filter(Boolean);
+    const sameSet = et.length > 1 && et.length === gt.length && et.slice().sort().join(',') === gt.slice().sort().join(',');
+    if (sameSet) {
+      const asc = gt.every((x, i) => i === 0 || +gt[i - 1] < +x);
+      const rev = gt.slice().reverse().join(' ') === et.join(' ');
+      let body = `"${firstFail.test.title}" 테스트에서 전위순회로 출력된 키의 집합은 맞지만 순서가 다릅니다 (기대 「${exp}」, 실제 「${got}」). `;
+      if (asc) body += '실제 출력이 오름차순이므로 중위순회(왼쪽 → 루트 → 오른쪽)를 하고 있습니다. 전위순회는 루트를 먼저 출력한 뒤 왼쪽 부트리, 오른쪽 부트리 순서입니다.';
+      else if (rev) body += '실제 출력이 기대 순서의 역순입니다. 왼쪽과 오른쪽 자식을 방문하는 순서, 또는 삽입 시 비교 방향(k < key → 왼쪽)을 확인하세요.';
+      else body += '트리에 들어 있는 키는 모두 맞으므로 삽입·삭제 로직보다는 순회 순서(루트 → 왼쪽 → 오른쪽)나 회전 후 부트리 연결 위치를 확인하세요.';
+      main.push({ level: 'warn', title: '순회 순서 또는 트리 모양이 다릅니다', body });
+    }
+  }
+  // 기대 줄이 실제 줄 안에 포함되는 경우: 프롬프트 등 추가 문구 출력
+  if (firstFail && firstFail.expLines.length === firstFail.gotLines.length && firstFail.expLines.every((l, i) => l !== firstFail.gotLines[i] ? firstFail.gotLines[i].includes(l) : true)) {
+    main.push({ level: 'warn', title: '결과 외의 문구가 함께 출력됩니다', body: `"${firstFail.test.title}" 테스트에서 각 줄에 기대한 값은 들어 있지만 다른 문구가 함께 출력됩니다 (예: 실제 「${firstFail.gotLines[firstFail.firstDiff]}」). "명령 입력:" 같은 안내문이나 "삭제된 키:" 같은 설명 문구 없이 값만 출력해야 합니다.` });
+  }
+  const hasDel = prob.id !== 'p2';
+  const shortOut = failed.filter(e => e.status === 'fail' && e.gotLines.length < e.expLines.length && e.gotLines.length > 0);
+  if (hasDel && shortOut.length && shortOut.every(e => /^d /m.test(e.test.input))) {
+    const allDelMissing = shortOut.every(e => { const dCount = (e.test.input.match(/^d /gm) || []).length; return e.expLines.length - e.gotLines.length === dCount; });
+    if (allDelMissing) main.push({ level: 'warn', title: 'd(삭제) 명령에 대한 출력이 없습니다', body: '삭제 명령을 처리하지 않거나 삭제 결과(삭제된 키 또는 X)를 출력하지 않습니다. main 의 명령 처리 switch 에 d 명령을 추가하고 removeElement 의 반환값을 출력하세요.' });
+  }
+  // 3. 유형별 힌트 (실패한 유형, 테스트 순서대로)
+  const seen = new Set();
+  const catHints = [];
+  for (const e of failed) {
+    if (e.status === 'err' && e.r.error && (e.r.error.ekind || '') !== 'timeout') continue; // 실행 오류는 위에서 설명
+    if (seen.has(e.test.cat)) continue;
+    seen.add(e.test.cat);
+    const passCount = evals.filter(x => x.test.cat === e.test.cat && x.status === 'pass').length, n = evals.filter(x => x.test.cat === e.test.cat).length;
+    let body = e.test.cat === '예시' ? '문제지에 실린 예시 입출력과 결과가 다릅니다. 명령 읽기 → 처리 → 출력의 기본 흐름을 먼저 점검하고, 아래 유형별 결과에서 어느 단계부터 틀리는지 확인하세요.' : e.test.hint;
+    if (e.status === 'fail' && e.firstDiff >= 0) {
+      const exp = e.expLines[e.firstDiff], got = e.gotLines[e.firstDiff];
+      body += ` — "${e.test.title}" 테스트의 ${e.firstDiff + 1}번째 출력 줄: 기대 「${exp === undefined ? '(없음)' : exp}」, 실제 「${got === undefined ? '(없음)' : got}」.`;
+    }
+    catHints.push({ level: 'warn', title: `유형 '${e.test.cat}' 틀림 (${passCount}/${n} 통과)`, body });
+  }
+  // 전체 출력이 한 번도 없는 경우: 출력 자체 문제
+  const noOutput = failed.filter(e => e.status === 'fail' && e.gotLines.length === 0);
+  if (noOutput.length === failed.length && failed.length === evals.length) {
+    main.push({ level: 'bad', title: '아무 것도 출력하지 않았습니다', body: 'p·s·d 명령에 대한 printf 출력이 없습니다. 명령 문자를 scanf("%c") 로 읽을 때 앞의 줄바꿈 문자가 함께 읽히는 문제라면 공백을 넣어 scanf(" %c") 로 읽거나, 줄바꿈은 무시하도록 처리하세요. 출력 형식은 d·s 는 키 또는 X 한 줄, p 는 전위순회 한 줄입니다.' });
+  }
+  // 토큰은 맞는데 줄 구조만 다른 경우
+  const lineOnly = failed.filter(e => e.status === 'fail' && e.expLines.join(' ').replace(/\s+/g, ' ') === e.gotLines.join(' ').replace(/\s+/g, ' '));
+  if (lineOnly.length) main.push({ level: 'warn', title: '출력 내용은 맞지만 줄 나눔이 다릅니다', body: `${lineOnly.length}개 테스트에서 출력된 값들은 모두 맞지만 줄바꿈 위치가 다릅니다. d·s 의 결과와 전위순회는 각각 한 줄로 출력하고 끝에 줄바꿈(\\n)을 넣어야 합니다. 전위순회에서 키마다 줄바꿈을 하거나, 마지막 줄바꿈이 빠졌는지 확인하세요.` });
+  catHints.forEach((h, i) => (main.length < 3 ? main : more).push(h));
+  // 추가: 통과한 유형 요약
+  const passedCats = [...new Set(evals.filter(e => e.status === 'pass').map(e => e.test.cat))];
+  if (passedCats.length) more.push({ level: 'ok', title: '잘 동작한 유형', body: passedCats.join(', ') });
+  const warns = [...new Set(evals.flatMap(e => e.r.warnings || []))];
+  if (warns.length) more.push({ level: 'warn', title: '전처리/실행 경고', body: warns.slice(0, 3).join(' ') });
+  return { main, more };
+}
+
+function checkFunctions(prob, code) {
+  const stripped = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  const defs = new Set();
+  const re = /\b([A-Za-z_]\w*)\s*\([^;{}()]*\)\s*\{/g;
+  let m; while ((m = re.exec(stripped))) { if (!['if', 'while', 'for', 'switch', 'return', 'sizeof'].includes(m[1])) defs.add(m[1].toLowerCase()); }
+  const alias = {
+    searchandfixafterinsertion: ['searchandrepairafterinsertion', 'fixafterinsertion', 'rebalanceinsert', 'rebalance', 'fixafterinsert', 'searchandfixinsertion', 'balanceinsert'],
+    searchandfixafterremoval: ['searchandrepairafterremoval', 'fixafterremoval', 'rebalanceremove', 'fixafterdelete', 'searchandfixafterdeletion', 'searchandrepairafterdeletion', 'balanceremove', 'fixafterdeletion'],
+    updateheight: ['heightupdate', 'heightupdateandbalancecheck', 'setheight', 'updateh', 'calcheight', 'computeheight'],
+    isbalanced: ['balanced', 'heightupdateandbalancecheck', 'checkbalance', 'balancecheck', 'isbalance'],
+    restructure: ['rotate', 'rotation', 'trinoderestructure', 'restructuring'],
+    inordersucc: ['inordersuccessor', 'successor', 'inordersuccessor', 'succ'],
+    findelement: ['find', 'search', 'searchelement', 'getelement'],
+    removeelement: ['remove', 'delete', 'removeitem', 'deleteitem', 'removekey', 'deletekey', 'removenode'],
+    insertitem: ['insert', 'insertelement', 'insertkey', 'insertnode', 'add'],
+    treesearch: ['search', 'searchtree', 'findnode', 'treesearchnode'],
+    isexternal: ['external', 'isleaf', 'isext'],
+    isinternal: ['internal', 'isint'],
+    expandexternal: ['expand', 'expandnode', 'makechildren'],
+    reduceexternal: ['reduce', 'reducenode', 'removeexternal'],
+  };
+  return prob.fns.map(name => {
+    const low = name.toLowerCase();
+    const found = defs.has(low) || (alias[low] || []).some(a => defs.has(a));
+    return { name, found };
+  });
+}
+
+$('#copy-btn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(lastSummary); toast('결과 요약을 복사했습니다.'); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = lastSummary; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('결과 요약을 복사했습니다.'); } catch (e2) { toast('복사할 수 없습니다. 아래 텍스트를 직접 선택하세요.'); }
+    ta.remove();
+  }
+});
+
+/* ---------- 시작 ---------- */
+selectProblem(currentPid);
+</script>
